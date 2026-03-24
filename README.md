@@ -15,6 +15,13 @@
 - Dockerfile, docker-compose, `.env.example`.
 - Тесты pytest для MVP-сценариев.
 
+## Учетные записи
+- При старте выполняется команда `python manage.py bootstrap_admin`.
+- Если пользователя `admin` нет, создаётся учетная запись:
+  - логин: `admin`
+  - пароль: `admin`
+- Все остальные учетные записи должен создавать администратор через веб-панель Django `/admin/`.
+
 ## Быстрый запуск через Docker
 ```bash
 cp .env.example .env
@@ -22,6 +29,7 @@ docker compose up --build
 ```
 
 Приложение: http://localhost:8000
+Админка: http://localhost:8000/admin/
 
 ## Локальный запуск (без Docker)
 1. Создайте venv и установите зависимости:
@@ -33,7 +41,7 @@ pip install -r requirements.txt
 export USE_SQLITE=1
 python manage.py migrate
 python manage.py loaddata fixtures/initial_data.json
-python manage.py createsuperuser
+python manage.py bootstrap_admin
 python manage.py runserver
 ```
 
@@ -63,5 +71,4 @@ pytest
 
 ## Ограничения MVP
 - PDF-шаблоны базовые; можно расширить поля и дизайн.
-- В `AuditLogApi` оставлен минимальный ответ-заглушка, при необходимости легко расширяется.
 - Нет внешних интеграций (касса/SMS/email), как и требовалось для MVP.
