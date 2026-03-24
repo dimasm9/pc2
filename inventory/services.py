@@ -38,6 +38,10 @@ class OperationContext:
     ip: Optional[str] = None
 
 
+def get_allowed_transition_codes(status_code: str) -> set[str]:
+    return set(STATUS_TRANSITIONS.get(status_code, set()))
+
+
 def write_audit(action: str, entity: str, entity_id: int, ctx: OperationContext, data=None):
     AuditLog.objects.create(
         user=ctx.user,
@@ -59,9 +63,9 @@ def change_equipment_status(equipment: Equipment, new_status_code: str, ctx: Ope
     old_status = equipment.status
     new_status = EquipmentStatus.objects.get(code=new_status_code)
 
-    allowed = STATUS_TRANSITIONS.get(old_status.code, set())
+    allowed = get_allowed_transition_codes(old_status.code)
     if new_status_code not in allowed and new_status_code != 'cancelled':
-        raise ValidationError('Недопустимый переход статуса.')
+        raise ValidationError(f'Недопустимый переход: {old_status.code} -> {new_status_code}.')
 
     if new_status_code == 'approved':
         validate_required_equipment_fields(equipment)

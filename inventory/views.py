@@ -1,19 +1,27 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
-from django.db.models import Count
+from django.db.models import Count, Exists, OuterRef
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
 from .forms import ClientForm, EquipmentForm, InspectionForm, ReservationForm
-from .models import AuditLog, Client, Equipment, EquipmentStatus
-from .services import OperationContext, add_inspection, change_equipment_status, create_reservation, generate_document, mark_document_signed
+from .models import AuditLog, Client, Equipment, EquipmentReservation, EquipmentStatus
+from .services import (
+    OperationContext,
+    add_inspection,
+    change_equipment_status,
+    create_reservation,
+    generate_document,
+    get_allowed_transition_codes,
+    mark_document_signed,
+)
 
 
 @login_required
 def dashboard(request):
     status_counts = Equipment.objects.filter(is_deleted=False).values('status__name').annotate(total=Count('id')).order_by('status__name')
-    active_reservations = sum(e.reservations.filter(status='active').count() for e in Equipment.objects.filter(is_deleted=False))
+    active_reservations = EquipmentReservation.objects.filter(status='active').count()
     recent_actions = AuditLog.objects.select_related('user').order_by('-created_at')[:10]
     return render(request, 'inventory/dashboard.html', {
         'status_counts': status_counts,
@@ -51,13 +59,25 @@ def approvals_queue(request):
 
 @login_required
 def equipment_list(request):
-    qs = Equipment.objects.filter(is_deleted=False).select_related('company', 'equipment_type', 'status')
+    active_reservation_subquery = EquipmentReservation.objects.filter(equipment=OuterRef('pk'), status='active')
+    qs = Equipment.objects.filter(is_deleted=False).select_related('company', 'equipment_type', 'status').annotate(
+        has_active_reservation=Exists(active_reservation_subquery)
+    )
+
     status = request.GET.get('status')
     if status:
         qs = qs.filter(status__code=status)
+
     search = request.GET.get('q')
     if search:
         qs = qs.filter(name__icontains=search)
+
+    has_reservation = request.GET.get('has_reservation')
+    if has_reservation == 'yes':
+        qs = qs.filter(has_active_reservation=True)
+    elif has_reservation == 'no':
+        qs = qs.filter(has_active_reservation=False)
+
     return render(request, 'inventory/equipment_list.html', {'items': qs[:200], 'statuses': EquipmentStatus.objects.all()})
 
 
@@ -121,9 +141,12 @@ def equipment_detail(request, pk):
             messages.error(request, str(exc))
         return redirect('equipment_detail', pk=pk)
 
+    allowed_codes = get_allowed_transition_codes(item.status.code)
+    status_options = EquipmentStatus.objects.filter(code__in=allowed_codes).order_by('name')
+
     return render(request, 'inventory/equipment_detail.html', {
         'item': item,
-        'status_options': EquipmentStatus.objects.all(),
+        'status_options': status_options,
         'reservation_form': ReservationForm(initial={'start_date': timezone.localdate()}),
         'inspection_form': InspectionForm(),
     })
