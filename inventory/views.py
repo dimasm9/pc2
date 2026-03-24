@@ -107,11 +107,14 @@ def equipment_detail(request, pk):
             if action == 'change_status':
                 change_equipment_status(item, request.POST['status_code'], ctx, request.POST.get('comment', ''))
                 messages.success(request, 'Статус изменен.')
+            elif action == 'to_reserved':
+                change_equipment_status(item, 'reserved', ctx, 'Переведено из карточки после создания брони')
+                messages.success(request, 'Статус изменен на "забронировано".')
             elif action == 'reserve':
                 form = ReservationForm(request.POST)
                 if form.is_valid():
                     create_reservation(item, form.cleaned_data['client'], ctx, form.cleaned_data['start_date'], form.cleaned_data['end_date'], form.cleaned_data['comment'])
-                    messages.success(request, 'Бронь создана.')
+                    messages.success(request, 'Бронь создана. Теперь можно перевести в статус "забронировано".')
                 else:
                     messages.error(request, form.errors.as_text())
             elif action == 'inspect':
@@ -142,13 +145,20 @@ def equipment_detail(request, pk):
         return redirect('equipment_detail', pk=pk)
 
     allowed_codes = get_allowed_transition_codes(item.status.code)
-    status_options = EquipmentStatus.objects.filter(code__in=allowed_codes).order_by('name')
+    has_active_reservation = item.reservations.filter(status='active').exists()
+    status_options = []
+    for status in EquipmentStatus.objects.filter(code__in=allowed_codes).order_by('name'):
+        disabled_reason = ''
+        if status.code == 'reserved' and not has_active_reservation:
+            disabled_reason = 'Сначала создайте активную бронь'
+        status_options.append({'code': status.code, 'name': status.name, 'disabled_reason': disabled_reason})
 
     return render(request, 'inventory/equipment_detail.html', {
         'item': item,
         'status_options': status_options,
         'reservation_form': ReservationForm(initial={'start_date': timezone.localdate()}),
         'inspection_form': InspectionForm(),
+        'has_active_reservation': has_active_reservation,
     })
 
 

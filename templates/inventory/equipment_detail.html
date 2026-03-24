@@ -5,6 +5,11 @@
   <span class="badge text-bg-primary">{{ item.status.name }}</span>
 </div>
 <p class="text-muted mt-2"><b>Инвентарный номер:</b> {{ item.inventory_number }}</p>
+
+<div class="alert alert-light border">
+  <b>Логика этапов:</b> черновик → на согласовании → согласовано → предложено к реализации → забронировано → осмотр → документы → передано → чек → реализовано.
+</div>
+
 <div class="row">
 <div class="col-md-6">
 <div class="card border-0 shadow-sm mb-3"><div class="card-body">
@@ -13,22 +18,32 @@
   <input type="hidden" name="action" value="change_status">
   <label class="form-label">Доступный следующий статус</label>
   <select name="status_code" class="form-select" {% if not status_options %}disabled{% endif %}>
-    {% for s in status_options %}<option value="{{ s.code }}">{{ s.name }}</option>{% endfor %}
+    {% for s in status_options %}
+      <option value="{{ s.code }}" {% if s.disabled_reason %}disabled{% endif %}>{{ s.name }}{% if s.disabled_reason %} — {{ s.disabled_reason }}{% endif %}</option>
+    {% endfor %}
   </select>
   <textarea name="comment" class="form-control mt-2" placeholder="Комментарий"></textarea>
   <button class="btn btn-primary mt-2" {% if not status_options %}disabled{% endif %}>Изменить</button>
   {% if not status_options %}<div class="text-muted small mt-2">Для текущего статуса переходов больше нет.</div>{% endif %}
 </form>
 </div></div>
+
 <div class="card border-0 shadow-sm mb-3"><div class="card-body">
 <h5>Бронь</h5>
 <form method="post">{% csrf_token %}<input type="hidden" name="action" value="reserve">{{ reservation_form.as_p }}<button class="btn btn-warning">Создать бронь</button></form>
+{% if item.status.code == 'offered' and has_active_reservation %}
+<form method="post" class="mt-2">{% csrf_token %}<input type="hidden" name="action" value="to_reserved"><button class="btn btn-success w-100">Перевести в «забронировано»</button></form>
+{% elif item.status.code == 'offered' %}
+<div class="alert alert-warning mt-2 mb-0">Чтобы перейти из «предложено к реализации» в «забронировано», сначала создайте активную бронь.</div>
+{% endif %}
 </div></div>
+
 <div class="card border-0 shadow-sm"><div class="card-body">
 <h5>Осмотр</h5>
 <form method="post">{% csrf_token %}<input type="hidden" name="action" value="inspect">{{ inspection_form.as_p }}<button class="btn btn-secondary">Сохранить осмотр</button></form>
 </div></div>
 </div>
+
 <div class="col-md-6">
 <div class="card border-0 shadow-sm mb-3"><div class="card-body">
 <h5>Документы</h5>
@@ -40,6 +55,7 @@
 </form>
 <ul class="mt-3">{% for d in item.documents.all %}<li>{{ d.document_type.name }} {{ d.document_number }} ({{ d.created_at|date:"d.m.Y H:i" }})</li>{% endfor %}</ul>
 </div></div>
+
 <div class="card border-0 shadow-sm"><div class="card-body">
 <h5>История статусов</h5>
 <ul>{% for h in item.status_history.all %}<li>{{ h.changed_at|date:"d.m.Y H:i" }}: {{ h.old_status.name }} → {{ h.new_status.name }}</li>{% endfor %}</ul>
