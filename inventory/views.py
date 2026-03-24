@@ -6,7 +6,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
 from .forms import ClientForm, EquipmentForm, InspectionForm, ReservationForm
-from .models import AuditLog, Client, Equipment, EquipmentDocument, EquipmentStatus
+from .models import AuditLog, Client, Equipment, EquipmentStatus
 from .services import OperationContext, add_inspection, change_equipment_status, create_reservation, generate_document, mark_document_signed
 
 
@@ -19,6 +19,33 @@ def dashboard(request):
         'status_counts': status_counts,
         'active_reservations': active_reservations,
         'recent_actions': recent_actions,
+    })
+
+
+@login_required
+def approvals_queue(request):
+    ctx = OperationContext(user=request.user, ip=request.META.get('REMOTE_ADDR'))
+    waiting = Equipment.objects.filter(is_deleted=False, status__code='approval').select_related('company', 'equipment_type', 'status')
+    approved_today = Equipment.objects.filter(is_deleted=False, status__code='approved').select_related('company', 'equipment_type')[:100]
+
+    if request.method == 'POST':
+        equipment = get_object_or_404(Equipment, pk=request.POST.get('equipment_id'), is_deleted=False)
+        action = request.POST.get('action')
+        comment = request.POST.get('comment', '')
+        try:
+            if action == 'approve':
+                change_equipment_status(equipment, 'approved', ctx, comment)
+                messages.success(request, f'Оборудование {equipment.inventory_number} переведено в "согласовано".')
+            elif action == 'cancel':
+                change_equipment_status(equipment, 'cancelled', ctx, comment)
+                messages.success(request, f'Оборудование {equipment.inventory_number} отменено.')
+        except ValidationError as exc:
+            messages.error(request, str(exc))
+        return redirect('approvals_queue')
+
+    return render(request, 'inventory/approvals_queue.html', {
+        'waiting': waiting,
+        'approved_today': approved_today,
     })
 
 

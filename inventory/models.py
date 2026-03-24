@@ -27,43 +27,55 @@ class Role(models.TextChoices):
 
 
 class Company(ActiveModel):
-    full_name = models.CharField(max_length=255)
-    short_name = models.CharField(max_length=100)
-    inn = models.CharField(max_length=12, unique=True)
+    full_name = models.CharField('Полное наименование', max_length=255)
+    short_name = models.CharField('Краткое наименование', max_length=100)
+    inn = models.CharField('ИНН', max_length=12, unique=True)
     kpp = models.CharField(max_length=9, blank=True)
     ogrn = models.CharField(max_length=13, blank=True)
     address = models.TextField(blank=True)
     phone = models.CharField(max_length=30, blank=True)
     email = models.EmailField(blank=True)
 
+    class Meta:
+        verbose_name = 'Общество'
+        verbose_name_plural = 'Общества'
+
     def __str__(self):
         return self.short_name
 
 
 class EquipmentType(ActiveModel):
-    name = models.CharField(max_length=120)
-    code = models.CharField(max_length=40, unique=True)
+    name = models.CharField('Название типа', max_length=120)
+    code = models.CharField('Код', max_length=40, unique=True)
     description = models.TextField(blank=True)
+
+    class Meta:
+        verbose_name = 'Тип оборудования'
+        verbose_name_plural = 'Типы оборудования'
 
     def __str__(self):
         return self.name
 
 
 class EquipmentStatus(models.Model):
-    code = models.CharField(max_length=50, unique=True)
-    name = models.CharField(max_length=100)
+    code = models.CharField('Код', max_length=50, unique=True)
+    name = models.CharField('Название', max_length=100)
+
+    class Meta:
+        verbose_name = 'Статус оборудования'
+        verbose_name_plural = 'Статусы оборудования'
 
     def __str__(self):
         return self.name
 
 
 class Equipment(TimeStampedModel, ActiveModel):
-    company = models.ForeignKey(Company, on_delete=models.PROTECT, related_name='equipment')
-    equipment_type = models.ForeignKey(EquipmentType, on_delete=models.PROTECT)
+    company = models.ForeignKey(Company, verbose_name='Общество', on_delete=models.PROTECT, related_name='equipment')
+    equipment_type = models.ForeignKey(EquipmentType, verbose_name='Тип оборудования', on_delete=models.PROTECT)
     status = models.ForeignKey(EquipmentStatus, on_delete=models.PROTECT)
-    inventory_number = models.CharField(max_length=120)
+    inventory_number = models.CharField('Инвентарный номер', max_length=120)
     serial_number = models.CharField(max_length=120, blank=True)
-    name = models.CharField(max_length=255)
+    name = models.CharField('Наименование', max_length=255)
     brand = models.CharField(max_length=120, blank=True)
     model = models.CharField(max_length=120, blank=True)
     manufacture_year = models.PositiveIntegerField(null=True, blank=True)
@@ -116,7 +128,7 @@ class ClientType(models.TextChoices):
 
 class Client(TimeStampedModel):
     client_type = models.CharField(max_length=20, choices=ClientType.choices)
-    name = models.CharField(max_length=255)
+    name = models.CharField('Наименование', max_length=255)
     phone = models.CharField(max_length=30, blank=True)
     email = models.EmailField(blank=True)
     passport_data = models.TextField(blank=True)

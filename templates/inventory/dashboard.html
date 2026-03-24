@@ -1,10 +1,28 @@
 {% extends 'inventory/base.html' %}
 {% block content %}
-<h1>Главная</h1>
-<div class="row">
-<div class="col-md-6"><h3>Оборудование по статусам</h3><ul>{% for row in status_counts %}<li>{{ row.status__name }}: {{ row.total }}</li>{% endfor %}</ul></div>
-<div class="col-md-6"><h3>Активные брони</h3><p class="display-6">{{ active_reservations }}</p></div>
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h3 mb-0">Главная</h1>
+  <div class="d-flex gap-2">
+    <a class="btn btn-primary" href="/equipment/new/">+ Добавить оборудование</a>
+    <a class="btn btn-outline-primary" href="/approvals/">Согласование</a>
+  </div>
 </div>
-<h3>Последние действия</h3>
-<table class="table"><tr><th>Дата</th><th>Пользователь</th><th>Действие</th></tr>{% for a in recent_actions %}<tr><td>{{ a.created_at }}</td><td>{{ a.user }}</td><td>{{ a.action }}</td></tr>{% endfor %}</table>
+<div class="row g-3 mb-4">
+  <div class="col-md-6">
+    <div class="card border-0 shadow-sm h-100"><div class="card-body">
+      <h5>Оборудование по статусам</h5>
+      <ul class="list-group list-group-flush">{% for row in status_counts %}<li class="list-group-item d-flex justify-content-between"><span>{{ row.status__name }}</span><b>{{ row.total }}</b></li>{% endfor %}</ul>
+    </div></div>
+  </div>
+  <div class="col-md-6">
+    <div class="card border-0 shadow-sm h-100"><div class="card-body">
+      <h5>Активные брони</h5>
+      <p class="display-6 mb-0">{{ active_reservations }}</p>
+    </div></div>
+  </div>
+</div>
+<h5>Последние действия</h5>
+<div class="table-responsive">
+<table class="table table-striped"><tr><th>Дата</th><th>Пользователь</th><th>Действие</th></tr>{% for a in recent_actions %}<tr><td>{{ a.created_at|date:"d.m.Y H:i" }}</td><td>{{ a.user }}</td><td>{{ a.action }}</td></tr>{% endfor %}</table>
+</div>
 {% endblock %}

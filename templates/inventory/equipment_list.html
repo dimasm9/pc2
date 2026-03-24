@@ -1,8 +1,17 @@
 {% extends 'inventory/base.html' %}
 {% block content %}
-<h1>Оборудование</h1>
-<a class="btn btn-success mb-3" href="/equipment/new/">Добавить</a>
-<table class="table table-striped"><tr><th>Инв.№</th><th>Серийный</th><th>Наименование</th><th>Тип</th><th>Общество</th><th>Статус</th><th>Обновлено</th></tr>
-{% for i in items %}<tr><td><a href="/equipment/{{ i.id }}/">{{ i.inventory_number }}</a></td><td>{{ i.serial_number }}</td><td>{{ i.name }}</td><td>{{ i.equipment_type.name }}</td><td>{{ i.company.short_name }}</td><td>{{ i.status.name }}</td><td>{{ i.updated_at }}</td></tr>{% endfor %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h3 mb-0">Оборудование</h1>
+  <a class="btn btn-success" href="/equipment/new/">Добавить</a>
+</div>
+<form class="row g-2 mb-3">
+  <div class="col-md-6"><input class="form-control" name="q" value="{{ request.GET.q }}" placeholder="Поиск по названию"></div>
+  <div class="col-md-4"><select class="form-select" name="status"><option value="">Все статусы</option>{% for s in statuses %}<option value="{{ s.code }}" {% if request.GET.status == s.code %}selected{% endif %}>{{ s.name }}</option>{% endfor %}</select></div>
+  <div class="col-md-2 d-grid"><button class="btn btn-outline-primary">Фильтр</button></div>
+</form>
+<div class="table-responsive">
+<table class="table table-hover align-middle"><thead><tr><th>Инв.№</th><th>Серийный</th><th>Наименование</th><th>Тип</th><th>Общество</th><th>Статус</th><th>Обновлено</th></tr></thead>
+<tbody>{% for i in items %}<tr><td><a class="fw-semibold" href="/equipment/{{ i.id }}/">{{ i.inventory_number }}</a></td><td>{{ i.serial_number|default:'—' }}</td><td>{{ i.name }}</td><td>{{ i.equipment_type.name }}</td><td>{{ i.company.short_name }}</td><td><span class="badge text-bg-light">{{ i.status.name }}</span></td><td>{{ i.updated_at|date:"d.m.Y H:i" }}</td></tr>{% endfor %}</tbody>
 </table>
+</div>
 {% endblock %}
