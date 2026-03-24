@@ -1,6 +1,7 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
+from django.db import transaction
 from django.db.models import Count, Exists, OuterRef
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -16,6 +17,12 @@ from .services import (
     get_allowed_transition_codes,
     mark_document_signed,
 )
+
+STATUS_FLOW = [
+    'draft', 'approval', 'approved', 'offered', 'reserved', 'inspected',
+    'consent_printed', 'consent_signed', 'transfer_act_printed', 'transferred',
+    'receipt_printed', 'sold',
+]
 
 
 @login_required
@@ -125,27 +132,38 @@ def equipment_detail(request, pk):
                 else:
                     messages.error(request, form.errors.as_text())
             elif action == 'print_consent':
-                client = item.reservations.filter(status='active').first().client
-                generate_document(item, client, 'consent', ctx)
-                change_equipment_status(item, 'consent_printed', ctx)
+                with transaction.atomic():
+                    change_equipment_status(item, 'consent_printed', ctx)
+                    client = item.reservations.filter(status='active').first().client
+                    generate_document(item, client, 'consent', ctx)
+                messages.success(request, 'Согласие распечатано.')
             elif action == 'sign_consent':
                 doc = item.documents.filter(document_type__code='consent').order_by('-created_at').first()
                 mark_document_signed(doc, ctx)
                 change_equipment_status(item, 'consent_signed', ctx)
+                messages.success(request, 'Согласие отмечено подписанным.')
             elif action == 'print_transfer':
-                client = item.reservations.filter(status='active').first().client
-                generate_document(item, client, 'transfer_act', ctx)
-                change_equipment_status(item, 'transfer_act_printed', ctx)
+                with transaction.atomic():
+                    change_equipment_status(item, 'transfer_act_printed', ctx)
+                    client = item.reservations.filter(status='active').first().client
+                    generate_document(item, client, 'transfer_act', ctx)
+                messages.success(request, 'Акт передачи распечатан.')
             elif action == 'mark_receipt':
-                client = item.reservations.filter(status='active').first().client
-                generate_document(item, client, 'receipt', ctx)
-                change_equipment_status(item, 'receipt_printed', ctx)
+                with transaction.atomic():
+                    change_equipment_status(item, 'receipt_printed', ctx)
+                    client = item.reservations.filter(status='active').first().client
+                    generate_document(item, client, 'receipt', ctx)
+                messages.success(request, 'Чек отмечен как распечатанный.')
         except (ValidationError, AttributeError) as exc:
             messages.error(request, str(exc))
         return redirect('equipment_detail', pk=pk)
 
     allowed_codes = get_allowed_transition_codes(item.status.code)
     has_active_reservation = item.reservations.filter(status='active').exists()
+    has_inspection = item.inspections.exists()
+    has_consent = item.documents.filter(document_type__code='consent', is_printed=True).exists()
+    has_transfer = item.documents.filter(document_type__code='transfer_act', is_printed=True).exists()
+
     status_options = []
     for status in EquipmentStatus.objects.filter(code__in=allowed_codes).order_by('name'):
         disabled_reason = ''
@@ -153,12 +171,20 @@ def equipment_detail(request, pk):
             disabled_reason = 'Сначала создайте активную бронь'
         status_options.append({'code': status.code, 'name': status.name, 'disabled_reason': disabled_reason})
 
+    progress = 0
+    if item.status.code in STATUS_FLOW:
+        progress = int((STATUS_FLOW.index(item.status.code) + 1) / len(STATUS_FLOW) * 100)
+
     return render(request, 'inventory/equipment_detail.html', {
         'item': item,
         'status_options': status_options,
         'reservation_form': ReservationForm(initial={'start_date': timezone.localdate()}),
         'inspection_form': InspectionForm(),
         'has_active_reservation': has_active_reservation,
+        'has_inspection': has_inspection,
+        'has_consent': has_consent,
+        'has_transfer': has_transfer,
+        'progress': progress,
     })
 
 
