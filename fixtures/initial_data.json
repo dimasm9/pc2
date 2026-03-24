@@ -1,0 +1,24 @@
+[
+  {"model": "auth.group", "pk": 1, "fields": {"name": "admin"}},
+  {"model": "auth.group", "pk": 2, "fields": {"name": "manager"}},
+  {"model": "auth.group", "pk": 3, "fields": {"name": "approver"}},
+  {"model": "auth.group", "pk": 4, "fields": {"name": "operator"}},
+
+  {"model": "inventory.equipmentstatus", "pk": 1, "fields": {"code": "draft", "name": "черновик"}},
+  {"model": "inventory.equipmentstatus", "pk": 2, "fields": {"code": "approval", "name": "на согласовании"}},
+  {"model": "inventory.equipmentstatus", "pk": 3, "fields": {"code": "approved", "name": "согласовано"}},
+  {"model": "inventory.equipmentstatus", "pk": 4, "fields": {"code": "offered", "name": "предложено к реализации"}},
+  {"model": "inventory.equipmentstatus", "pk": 5, "fields": {"code": "reserved", "name": "забронировано"}},
+  {"model": "inventory.equipmentstatus", "pk": 6, "fields": {"code": "inspected", "name": "осмотр проведён"}},
+  {"model": "inventory.equipmentstatus", "pk": 7, "fields": {"code": "consent_printed", "name": "согласие распечатано"}},
+  {"model": "inventory.equipmentstatus", "pk": 8, "fields": {"code": "consent_signed", "name": "согласие подписано"}},
+  {"model": "inventory.equipmentstatus", "pk": 9, "fields": {"code": "transfer_act_printed", "name": "акт передачи распечатан"}},
+  {"model": "inventory.equipmentstatus", "pk": 10, "fields": {"code": "transferred", "name": "передано"}},
+  {"model": "inventory.equipmentstatus", "pk": 11, "fields": {"code": "receipt_printed", "name": "чек распечатан"}},
+  {"model": "inventory.equipmentstatus", "pk": 12, "fields": {"code": "sold", "name": "реализовано"}},
+  {"model": "inventory.equipmentstatus", "pk": 13, "fields": {"code": "cancelled", "name": "отменено"}},
+
+  {"model": "inventory.documenttype", "pk": 1, "fields": {"code": "consent", "name": "Согласие"}},
+  {"model": "inventory.documenttype", "pk": 2, "fields": {"code": "transfer_act", "name": "Акт передачи"}},
+  {"model": "inventory.documenttype", "pk": 3, "fields": {"code": "receipt", "name": "Чек"}}
+]
