@@ -1,0 +1,52 @@
+{% extends 'inventory/base.html' %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h3 mb-0">Оборудование на согласовании</h1>
+  <span class="badge text-bg-primary">{{ waiting|length }} к согласованию</span>
+</div>
+<div class="row g-3">
+  <div class="col-lg-7">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white"><b>Ожидают согласования</b></div>
+      <div class="table-responsive">
+        <table class="table table-hover mb-0 align-middle">
+          <thead><tr><th>Инв.№</th><th>Наименование</th><th>Общество</th><th>Действие</th></tr></thead>
+          <tbody>
+          {% for item in waiting %}
+            <tr>
+              <td><a href="/equipment/{{ item.id }}/">{{ item.inventory_number }}</a></td>
+              <td>{{ item.name }}<div class="text-muted small">{{ item.equipment_type.name }}</div></td>
+              <td>{{ item.company.short_name }}</td>
+              <td>
+                <form method="post" class="d-flex gap-2">{% csrf_token %}
+                  <input type="hidden" name="equipment_id" value="{{ item.id }}">
+                  <input type="hidden" name="action" value="approve">
+                  <button class="btn btn-sm btn-success">→ Согласовано</button>
+                </form>
+              </td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="4" class="text-center text-muted py-4">Нет оборудования на согласовании</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-white"><b>Уже согласовано</b></div>
+      <div class="list-group list-group-flush">
+        {% for item in approved_today %}
+          <a href="/equipment/{{ item.id }}/" class="list-group-item list-group-item-action d-flex justify-content-between">
+            <span>{{ item.inventory_number }} — {{ item.name|truncatechars:28 }}</span>
+            <span class="badge text-bg-success">ok</span>
+          </a>
+        {% empty %}
+          <div class="list-group-item text-muted">Пока пусто</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

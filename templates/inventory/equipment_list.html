@@ -1,0 +1,18 @@
+{% extends 'inventory/base.html' %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h3 mb-0">Оборудование</h1>
+  <a class="btn btn-success" href="/equipment/new/">Добавить</a>
+</div>
+<form class="row g-2 mb-3">
+  <div class="col-md-5"><input class="form-control" name="q" value="{{ request.GET.q }}" placeholder="Поиск по названию"></div>
+  <div class="col-md-3"><select class="form-select" name="status"><option value="">Все статусы</option>{% for s in statuses %}<option value="{{ s.code }}" {% if request.GET.status == s.code %}selected{% endif %}>{{ s.name }}</option>{% endfor %}</select></div>
+  <div class="col-md-2"><select class="form-select" name="has_reservation"><option value="">Наличие брони</option><option value="yes" {% if request.GET.has_reservation == 'yes' %}selected{% endif %}>Есть бронь</option><option value="no" {% if request.GET.has_reservation == 'no' %}selected{% endif %}>Нет брони</option></select></div>
+  <div class="col-md-2 d-grid"><button class="btn btn-outline-primary">Фильтр</button></div>
+</form>
+<div class="table-responsive">
+<table class="table table-hover align-middle"><thead><tr><th>Инв.№</th><th>Серийный</th><th>Наименование</th><th>Тип</th><th>Общество</th><th>Статус</th><th>Активная бронь</th><th>Обновлено</th></tr></thead>
+<tbody>{% for i in items %}<tr><td><a class="fw-semibold" href="/equipment/{{ i.id }}/">{{ i.inventory_number }}</a></td><td>{{ i.serial_number|default:'—' }}</td><td>{{ i.name }}</td><td>{{ i.equipment_type.name }}</td><td>{{ i.company.short_name }}</td><td><span class="badge text-bg-light">{{ i.status.name }}</span></td><td>{% if i.has_active_reservation %}<span class="badge text-bg-warning">Да</span>{% else %}<span class="badge text-bg-secondary">Нет</span>{% endif %}</td><td>{{ i.updated_at|date:"d.m.Y H:i" }}</td></tr>{% endfor %}</tbody>
+</table>
+</div>
+{% endblock %}
